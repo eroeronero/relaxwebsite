@@ -26,8 +26,8 @@ function App() {
   const [terminalLines, setTerminalLines] = useState<string[]>([])
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   
-  // Video ref for manual control
-  const videoRef = useRef<HTMLVideoElement>(null)
+  // Video ref for manual control (now iframe)
+  const videoRef = useRef<HTMLIFrameElement>(null)
   // Audio ref for background music
   const audioRef = useRef<HTMLAudioElement>(null)
   // Ref for user profile combined for 3D effect
@@ -178,16 +178,9 @@ function App() {
     
     // Small delay to ensure refs are ready
     setTimeout(async () => {
-      // Start video
+      // Start iframe (Google Drive video) - no additional controls needed
       if (videoRef.current) {
-        try {
-          videoRef.current.muted = true
-          videoRef.current.loop = true
-          await videoRef.current.play()
-          console.log('Video başlatıldı')
-        } catch (error) {
-          console.error('Video başlatma hatası:', error)
-        }
+        console.log('Google Drive video iframe yüklendi')
       }
       
       // Start background music
@@ -232,53 +225,25 @@ function App() {
   }
 
   useEffect(() => {
-    // Video play logic - only start after user enters
+    // Google Drive video iframe - automatically loads when component mounts
     if (!hasEntered) return
     
-    const handleVideoLoad = () => {
+    const handleIframeLoad = () => {
       if (videoRef.current) {
-        const video = videoRef.current
-        
-        // Set initial properties
-        video.muted = true
-        video.loop = true
-        video.playsInline = true
-        video.autoplay = true
-        
-        const playVideo = async () => {
-          try {
-            await video.play()
-            console.log('Video başarıyla oynatıldı')
-          } catch (error) {
-            console.log('Video autoplay engellendi:', error)
-          }
-        }
-        
-        // Multiple trigger points for video play
-        if (video.readyState >= 3) {
-          playVideo()
-        } else {
-          video.addEventListener('canplay', playVideo, { once: true })
-          video.addEventListener('loadeddata', playVideo, { once: true })
-        }
+        console.log('Google Drive video iframe başarıyla yüklendi')
       }
     }
     
     // Initialize when component mounts and user has entered
     if (videoRef.current) {
-      handleVideoLoad()
+      handleIframeLoad()
     } else {
       // Wait for ref to be available
-      const timer = setTimeout(handleVideoLoad, 100)
+      const timer = setTimeout(handleIframeLoad, 100)
       return () => clearTimeout(timer)
     }
     
-    return () => {
-      // Cleanup
-      if (videoRef.current) {
-        videoRef.current.pause()
-      }
-    }
+    // No cleanup needed for iframe
   }, [hasEntered])
 
   useEffect(() => {
@@ -425,26 +390,27 @@ function App() {
           ))}
         </div>
         
-        <video 
-          ref={videoRef}
-          autoPlay
-          muted 
-          loop 
-          playsInline
-          preload="auto"
-          controls={false}
-          onLoadStart={() => console.log('Video yükleniyor...')}
-          onLoadedData={() => console.log('Video data yüklendi')}
-          onCanPlay={() => console.log('Video oynatılabilir durumda')}
-          onPlay={() => console.log('Video oynatılıyor')}
-          onError={(e) => {
-            console.error('Video yükleme hatası:', e)
-            console.error('Video current src:', videoRef.current?.currentSrc)
+        <iframe
+          ref={videoRef as any}
+          src="https://drive.google.com/file/d/14NgIm0lFaxKSVAG0DMgFYkgiZIOchT6d/preview"
+          width="100%"
+          height="100%"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: -1,
+            border: 'none'
           }}
-        >
-          <source src="/video.mp4" type="video/mp4" />
-          Video dosyası yüklenemedi.
-        </video>
+          allow="autoplay"
+          onLoad={() => console.log('Google Drive video yüklendi')}
+          onError={(e) => {
+            console.error('Google Drive video yükleme hatası:', e)
+          }}
+        />
       </div>
       
       {/* Volume/Music Control Icon */}
