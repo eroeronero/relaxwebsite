@@ -26,7 +26,7 @@ function App() {
   const [terminalLines, setTerminalLines] = useState<string[]>([])
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   
-  // Video ref for manual control (now video element)
+  // Video ref for manual control
   const videoRef = useRef<HTMLVideoElement>(null)
   // Audio ref for background music
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -181,10 +181,9 @@ function App() {
       // Start video
       if (videoRef.current) {
         try {
-          videoRef.current.volume = 0; // Video sessiz olsun
-          videoRef.current.loop = true;
-          videoRef.current.muted = true;
-          await videoRef.current.play();
+          videoRef.current.muted = true
+          videoRef.current.loop = true
+          await videoRef.current.play()
           console.log('Video başlatıldı')
         } catch (error) {
           console.error('Video başlatma hatası:', error)
@@ -233,17 +232,34 @@ function App() {
   }
 
   useEffect(() => {
-    // Video element - automatically loads when component mounts
+    // Video play logic - only start after user enters
     if (!hasEntered) return
     
     const handleVideoLoad = () => {
       if (videoRef.current) {
-        console.log('Video element başarıyla yüklendi')
-        // Try to play video if not already playing
-        if (videoRef.current.paused) {
-          videoRef.current.play().catch(e => {
-            console.log('Video autoplay blocked:', e)
-          })
+        const video = videoRef.current
+        
+        // Set initial properties
+        video.muted = true
+        video.loop = true
+        video.playsInline = true
+        video.autoplay = true
+        
+        const playVideo = async () => {
+          try {
+            await video.play()
+            console.log('Video başarıyla oynatıldı')
+          } catch (error) {
+            console.log('Video autoplay engellendi:', error)
+          }
+        }
+        
+        // Multiple trigger points for video play
+        if (video.readyState >= 3) {
+          playVideo()
+        } else {
+          video.addEventListener('canplay', playVideo, { once: true })
+          video.addEventListener('loadeddata', playVideo, { once: true })
         }
       }
     }
@@ -257,7 +273,12 @@ function App() {
       return () => clearTimeout(timer)
     }
     
-    // No cleanup needed for video
+    return () => {
+      // Cleanup
+      if (videoRef.current) {
+        videoRef.current.pause()
+      }
+    }
   }, [hasEntered])
 
   useEffect(() => {
@@ -404,31 +425,26 @@ function App() {
           ))}
         </div>
         
-        <video
+        <video 
           ref={videoRef}
-          src="https://r2.guns.lol/c28d6b4a-9935-4ea1-afe0-dfaa9a13d544.mp4"
           autoPlay
-          loop
-          muted
+          muted 
+          loop 
           playsInline
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: -1,
-            border: 'none'
-          }}
+          preload="auto"
+          controls={false}
           onLoadStart={() => console.log('Video yükleniyor...')}
           onLoadedData={() => console.log('Video data yüklendi')}
           onCanPlay={() => console.log('Video oynatılabilir durumda')}
           onPlay={() => console.log('Video oynatılıyor')}
           onError={(e) => {
             console.error('Video yükleme hatası:', e)
+            console.error('Video current src:', videoRef.current?.currentSrc)
           }}
-        />
+        >
+          <source src="/video.mp4" type="video/mp4" />
+          Video dosyası yüklenemedi.
+        </video>
       </div>
       
       {/* Volume/Music Control Icon */}
