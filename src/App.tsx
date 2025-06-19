@@ -83,28 +83,43 @@ function App() {
         setIsDeleting(false)
       }, 500)
       return () => clearTimeout(timer)
-    }  }, [hasEntered])
-
-  // Customer count animation
+    }  }, [hasEntered])  // Customer count animation - Smooth and fast (Matrix style)
   useEffect(() => {
     if (!hasEntered) return
 
-    const targetCount = 120
-    const duration = 3000 // 3 seconds
-    const increment = (targetCount - 12) / (duration / 50) // Update every 50ms
+    const targetCount = 1200
+    const startCount = 12
+    const duration = 1500 // 1.5 seconds (faster)
+    const startTime = Date.now()
 
-    let current = 12
-    const timer = setInterval(() => {
-      current += increment
-      if (current >= targetCount) {
-        setCustomerCount(targetCount)
-        clearInterval(timer)
+    // Easing function for smooth animation (easeOutExpo)
+    const easeOutExpo = (t: number): number => {
+      return t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
+    }
+
+    const animateCount = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      
+      // Apply easing function for smooth acceleration/deceleration
+      const easedProgress = easeOutExpo(progress)
+      const currentCount = startCount + (targetCount - startCount) * easedProgress
+      
+      setCustomerCount(Math.floor(currentCount))
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateCount)
       } else {
-        setCustomerCount(Math.floor(current))
+        setCustomerCount(targetCount) // Ensure we end at exact target
       }
-    }, 50)
+    }
 
-    return () => clearInterval(timer)
+    // Start animation with a small delay
+    const timer = setTimeout(() => {
+      animateCount()
+    }, 300)
+
+    return () => clearTimeout(timer)
   }, [hasEntered])
 
   // 3D Effect handler for user profile
