@@ -76,31 +76,44 @@ class SpotifyAPI {
     }
     return false;
   }
-
   // Get currently playing track
   async getCurrentlyPlaying(): Promise<SpotifyTrack | null> {
     if (!this.accessToken) {
+      console.log('No access token available');
       return null;
     }
 
     try {
+      console.log('Fetching currently playing track...');
       const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         }
       });
 
+      console.log('Response status:', response.status);
+
       if (response.status === 401) {
+        console.log('Token expired, refreshing...');
         // Token expired, try to refresh
-        await this.refreshAccessToken();
-        return this.getCurrentlyPlaying();
+        const refreshSuccess = await this.refreshAccessToken();
+        if (refreshSuccess) {
+          return this.getCurrentlyPlaying();
+        }
+        return null;
       }
 
-      if (response.ok && response.status !== 204) {
+      if (response.status === 204) {
+        console.log('No content - nothing is currently playing');
+        return null;
+      }
+
+      if (response.ok) {
         const data = await response.json();
+        console.log('Spotify API Response:', data);
         
         if (data.item) {
-          return {
+          const track = {
             name: data.item.name,
             artist: data.item.artists[0]?.name || 'Unknown Artist',
             image: data.item.album.images[0]?.url || '',
@@ -108,7 +121,15 @@ class SpotifyAPI {
             progress: data.progress_ms,
             duration: data.item.duration_ms
           };
+          console.log('Parsed track:', track);
+          return track;
+        } else {
+          console.log('No item in response');
         }
+      } else {
+        console.log('Request failed with status:', response.status);
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
       }
     } catch (error) {
       console.error('Error fetching currently playing track:', error);
