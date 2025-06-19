@@ -426,10 +426,9 @@ function App() {
         className="user-profile-combined"
         onMouseMove={handle3DEffect}
         onMouseLeave={reset3DEffect}
-      >
-        <div className="profile-section">
+      >        <div className="profile-section">
           <div className="avatar">
-            <img src="https://media.discordapp.net/attachments/1216400509892689961/1382054816783794518/relax2.0.png?ex=68544e59&is=6852fcd9&hm=481c8028a38ab8453c1a3e454e2c4199934c60b42805419050ec946374ef3d15&=&format=webp&quality=lossless&width=968&height=968" alt="Profile" />
+            <img src="/relax2.0.png" alt="Profile" />
             <div className="status-indicator online"></div>
           </div>
           <div className="user-info">
